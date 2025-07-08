@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computação Forense - Prof. Heber Castro</title>
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* CSS completo e funcional */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Fira+Code:wght@400;600&display=swap');
+        :root { --primary-color: #00aaff; --secondary-color: #00ffaa; --background-color: #0a0a14; --text-color: #e0e0e0; --header-color: #ffffff; --code-bg-color: #1a1a2e; --border-color: #333344; --highlight-color: #ffc400; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Roboto', sans-serif; background-color: var(--background-color); color: var(--text-color); overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #presentation-container { width: 100vw; height: 100vh; position: relative; background: var(--background-color) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><g fill="%231a1a2e" fill-opacity="0.4"><rect x="50" width="50" height="50"/><rect y="50" width="50" height="50"/></g></svg>'); }
+        .slide { width: 100%; height: 100%; padding: 80px; position: absolute; top: 0; left: 0; opacity: 0; visibility: hidden; transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out; transform: scale(0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; overflow-y: auto; }
+        .slide.active-slide { opacity: 1; visibility: visible; transform: scale(1); z-index: 1; }
+        #logo { position: fixed; top: 20px; right: 20px; width: 180px; z-index: 100; opacity: 0.8; transition: opacity 0.3s; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 5px; }
+        #logo:hover { opacity: 1; }
+        #navigation { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 10px; align-items: center; background-color: rgba(26, 26, 46, 0.8); padding: 5px 15px; border-radius: 10px; backdrop-filter: blur(5px); }
+        .nav-btn, #fullscreen-btn { background-color: transparent; color: white; border: 1px solid var(--primary-color); padding: 10px 15px; font-size: 18px; cursor: pointer; border-radius: 5px; transition: background-color 0.3s, color 0.3s; }
+        .nav-btn:hover, #fullscreen-btn:hover { background-color: var(--primary-color); color: var(--background-color); }
+        #slide-counter { color: #aaa; font-size: 16px; min-width: 70px; text-align: center; font-family: 'Fira Code', monospace; }
+        #fullscreen-btn { position: fixed; bottom: 20px; right: 20px; z-index: 100; }
+        h1, h2, h3 { font-family: 'Roboto', sans-serif; font-weight: 700; color: var(--header-color); margin-bottom: 20px; text-shadow: 0 0 8px rgba(0, 170, 255, 0.7); }
+        h1 { font-size: 3.2em; } h2 { font-size: 2.5em; color: var(--secondary-color); } h3 { font-size: 1.8em; }
+        p { font-size: 1.2em; line-height: 1.6; max-width: 900px; margin-bottom: 20px; }
+        a { color: var(--secondary-color); text-decoration: none; transition: color 0.3s; }
+        a:hover { text-decoration: underline; }
+        .details-link { color: var(--highlight-color); cursor: pointer; border-bottom: 2px dotted var(--highlight-color); transition: color 0.3s, border-bottom 0.3s; }
+        .details-link:hover { color: white; border-bottom: 2px solid white; text-decoration: none; }
+        ul, ol { text-align: left; max-width: 800px; margin: 20px auto; font-size: 1.1em; line-height: 1.8; }
+        li { margin-bottom: 10px; } li i { margin-right: 10px; color: var(--primary-color); }
+        .two-column, .three-column { display: flex; flex-wrap: wrap; gap: 40px; width: 100%; align-items: stretch; justify-content: center; text-align: left; }
+        .three-column { gap: 20px; }
+        .column { flex: 1; min-width: 300px; } .column.center-text { text-align: center; }
+        .content-box { background-color: rgba(26, 26, 46, 0.7); border: 1px solid var(--border-color); padding: 25px; border-radius: 8px; margin-top: 20px; width: 100%; max-width: 1100px; display: flex; flex-direction: column; }
+        .content-box .case-link { margin-top: auto; }
+        pre { background-color: var(--code-bg-color); color: var(--secondary-color); padding: 20px; border-radius: 5px; font-family: 'Fira Code', monospace; text-align: left; white-space: pre-wrap; font-size: 0.9em; border-left: 5px solid var(--primary-color); max-width: 900px; margin: 20px auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .video-container { width: 80%; max-width: 800px; aspect-ratio: 16 / 9; margin: 20px auto; border: 3px solid var(--primary-color); border-radius: 8px; overflow: hidden; box-shadow: 0 0 20px var(--primary-color); background-color: #000; }
+        .video-container video, .video-container iframe { width: 100%; height: 100%; border: none; }
+        #title-slide .professor-info { display: flex; flex-direction: column; align-items: center; gap: 20px; margin-top: 40px; }
+        #title-slide #qrcode { width: 150px; height: 150px; border: 3px solid var(--secondary-color); border-radius: 10px; }
+        #index-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; width: 90%; max-width: 1200px; margin-top: 30px; }
+        .index-item { background-color: var(--code-bg-color); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; }
+        .index-item:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0, 170, 255, 0.5); }
+        .index-item h3 { margin-bottom: 5px; font-size: 1.2em; color: var(--primary-color); }
+        .index-item p { font-size: 0.9em; margin-bottom: 0; }
+        .slide-image { max-width: 80%; max-height: 450px; margin-top: 20px; border-radius: 10px; border: 2px solid var(--border-color); background: #fff; }
+        .case-image { width: 100%; height: auto; border-radius: 8px 8px 0 0; margin-bottom: 15px; display: block; }
+        .detail-image { width: 100%; height: 220px; object-fit: cover; border-radius: 8px 8px 0 0; margin-bottom: 15px; }
+        .slide-gif { max-width: 50%; max-height: 350px; border-radius: 10px; }
+        .highlight { color: var(--highlight-color); font-weight: bold; }
+        .icon-large { font-size: 4em; color: var(--primary-color); margin-bottom: 20px; }
+        .resources-title { color: var(--highlight-color); border-bottom: 2px solid var(--highlight-color); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div id="presentation-container">
+        <!-- Logo (carregando da pasta local) -->
+        <img id="logo" src="Centro_Universitario_Moura_Lacerda.png" alt="Logo Moura Lacerda">
+        
+        <!-- SLIDES DA APRESENTAÇÃO -->
+        <div class="slide active-slide" data-slide-id="0">
+            <h1>Computação Forense</h1>
+            <h2>Análise e Desenvolvimento de Sistemas</h2>
+            <div class="professor-info">
+                <div>
+                    <h3>Prof. Heber Castro</h3>
+                    <p>Conecte-se e vamos construir o futuro da cibersegurança juntos.</p>
+                </div>
+                <img id="qrcode" src="Linkedin.png" alt="QR Code LinkedIn Heber Castro">
+            </div>
+            <div style="margin-top: 40px; font-size: 1em; color: #aaa; display: flex; align-items: center; justify-content: center; gap: 10px;">Use as setas <i class="fas fa-caret-left"></i> <i class="fas fa-caret-right"></i> para navegar</div>
+        </div>
+
+        <div class="slide" data-slide-id="1">
+            <h2><i class="fas fa-sitemap"></i> Cronograma do Curso</h2>
+            <p>Clique em uma semana para pular para o conteúdo.</p>
+            <div id="index-grid">
+                <div class="index-item" data-target-slide="2"><h3>Semana 1</h3><p>Introdução & Fundamentos</p></div>
+                <div class="index-item" data-target-slide="9"><h3>Semana 2</h3><p>Leis, Ética & Processo</p></div>
+                <div class="index-item" data-target-slide="14"><h3>Semana 3</h3><p>O Processo Forense</p></div>
+            </div>
+        </div>
+
+        <!-- --- SEMANA 1 --- -->
+        <div class="slide" data-slide-id="2">
+            <h2>Semana 1: O Ponto de Partida</h2>
+            <h3><i class="fas fa-microscope"></i> O que é Ciência Forense e Computação Forense?</h3>
+            <div class="two-column">
+                <div class="column content-box">
+                    <h4><a href="#" class="details-link" data-goto-slide="99">Ciência Forense <i class="fas fa-info-circle"></i></a></h4>
+                    <p>É a aplicação de qualquer ramo da ciência para responder a questões de interesse legal. Ela é a <span class="highlight">testemunha silenciosa</span> que revela a verdade através de fatos e evidências.</p>
+                </div>
+                <div class="column content-box">
+                    <h4><a href="#" class="details-link" data-goto-slide="100">Computação Forense <i class="fas fa-info-circle"></i></a></h4>
+                    <p>É o braço digital da ciência forense. Nós somos os <span class="highlight">detetives digitais</span> que coletam, preservam, analisam e apresentam dados de mídias eletrônicas para desvendar o que aconteceu.</p>
+                </div>
+            </div>
+             <img src="gif_forense.gif" alt="Digital Forensics GIF" class="slide-gif">
+        </div>
+
+        <div class="slide" data-slide-id="3">
+            <h2>Semana 1: A Tríade da Segurança da Informação (CID)</h2>
+            <p>Toda investigação forense digital nasce da violação de um ou mais destes pilares fundamentais.</p>
+            <div class="three-column">
+                <div class="column center-text content-box">
+                    <i class="fas fa-lock icon-large"></i><h3>Confidencialidade</h3>
+                    <p>A informação só pode ser acessada por quem tem permissão.<br><span class="highlight">Quebra:</span> Vazamento de dados, espionagem.</p>
+                </div>
+                <div class="column center-text content-box">
+                    <i class="fas fa-check-double icon-large"></i><h3>Integridade</h3>
+                    <p>A informação é exata, completa e não foi alterada.<br><span class="highlight">Quebra:</span> Fraude, alteração de logs, ransomware.</p>
+                </div>
+                <div class="column center-text content-box">
+                    <i class="fas fa-server icon-large"></i><h3>Disponibilidade</h3>
+                    <p>O sistema e os dados estão acessíveis quando necessários.<br><span class="highlight">Quebra:</span> Ataques DDoS, sabotagem.</p>
+                </div>
+            </div>
+            <div class="content-box" style="margin-top: 30px; padding: 15px;">
+                <p style="margin: 0; font-size: 1.1em;">
+                    <a href="#" class="details-link" data-goto-slide="101">
+                        <i class="fas fa-book-open"></i> Curioso sobre como tudo isso começou? Clique aqui para ver a história e evolução da Computação Forense.
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <div class="slide" data-slide-id="4">
+            <h2>Semana 1: Estudo de Caso - The Cuckoo's Egg</h2>
+            <h3>A Caçada ao Hacker que Começou com 75 Centavos</h3>
+            <p>Em 1986, o astrônomo Clifford Stoll, atuando como administrador de sistemas, notou um erro de contabilidade de 75 centavos. Ao investigar, descobriu um hacker (ligado à KGB) que usava seu sistema como ponte para invadir redes militares dos EUA. Ele documentou tudo, criando um dos primeiros exemplos práticos de forense de redes.</p>
+            <div class="video-container">
+                <video controls>
+                    <source src="video_cuckoos_egg.mp4" type="video/mp4">
+                    Seu navegador não suporta a tag de vídeo.
+                </video>
+            </div>
+            <p style="margin-top: 20px;"><span class="highlight">Lição:</span> Pequenas anomalias podem esconder grandes incidentes. A persistência e a documentação rigorosa são as maiores armas do investigador.</p>
+            <div class="content-box" style="margin-top: 20px; padding: 15px;">
+                <p style="margin: 0; font-size: 1.1em;">
+                    <a href="#" class="details-link" data-goto-slide="102">
+                        <i class="fas fa-user-tie"></i> Quer entender em detalhes o papel do profissional por trás de uma investigação como essa? Clique aqui para conhecer o Perito Forense Digital.
+                    </a>
+                </p>
+            </div>
+        </div>
+        
+        <div class="slide" data-slide-id="5">
+            <h2>Semana 1: A Perícia em Ação - Casos Famosos</h2>
+            <p>A teoria ganha vida quando vemos como a perícia digital resolveu crimes reais e complexos.</p>
+            <div class="three-column">
+                <div class="column content-box">
+                    <img src="https://assets.brasildefato.com.br/2024/09/image_processing20210412-10498-1yhvipb.jpeg" alt="Caso Henry Borel" class="case-image">
+                    <h4>Caso Henry Borel (BR)</h4>
+                    <p style="font-size: 1em;">A análise do celular da mãe e a recuperação de mensagens e fotos apagadas com a ferramenta <span class="highlight">Cellebrite</span> foram cruciais para desmentir depoimentos e reconstruir a dinâmica dos fatos. Demonstrou a importância da perícia móvel.</p>
+                    <a href="https://www.cnnbrasil.com.br/nacional/caso-henry-borel-o-que-se-sabe-sobre-a-morte-do-garoto-de-4-anos/" target="_blank" class="case-link">Saiba Mais <i class="fas fa-external-link-alt"></i></a>
+                </div>
+                <div class="column content-box">
+                    <img src="https://aventurasnahistoria.com.br/media/_versions/personagem/serial_killer_btk_widelg.jpg" alt="BTK Killer" class="case-image">
+                    <h4>BTK Killer (EUA)</h4>
+                    <p style="font-size: 1em;">Após anos de silêncio, o assassino enviou um <span class="highlight">disquete</span> para a polícia. A perícia recuperou metadados de um arquivo deletado que apontavam para "Dennis" na "Christ Lutheran Church", levando diretamente à prisão de Dennis Rader.</p>
+                    <a href="https://gshow.globo.com/programas/dupla-identidade/Extras/noticia/2014/09/saiba-quem-foi-o-serial-killer-btk-e-entende-seu-codinome.html" target="_blank" class="case-link">Saiba Mais <i class="fas fa-external-link-alt"></i></a>
+                </div>
+                <div class="column content-box">
+                    <img src="https://s2-oglobo.glbimg.com/P-OXlKv_2tMF-Et6tEZD-ox3aVQ=/0x39:1181x1022/888x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_da025474c0c44edd99332dddb09cabe8/internal_photos/bs/2023/y/p/WAnmslQiA308eWx8jHJg/40527651-05081998-elias-eberhardt-correio-do-povo-pa-francisco-de-assis-pereira-acusado-de-ser.jpg" alt="Maníaco do Parque" class="case-image">
+                    <h4>Maníaco do Parque (BR)</h4>
+                    <p style="font-size: 1em;">Embora mais antigo, foi um marco no uso da ciência forense no Brasil. A condenação se baseou fortemente em evidências periciais como análise de <span class="highlight">DNA</span> do sêmen encontrado nas vítimas e <span class="highlight">odontologia forense</span> para analisar marcas de mordida.</p>
+                    <a href="https://www.cnnbrasil.com.br/nacional/relembre-o-caso-do-maniaco-do-parque-tema-de-filme-que-estreia-hoje/" target="_blank" class="case-link">Saiba Mais <i class="fas fa-external-link-alt"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide" data-slide-id="6">
+            <h2>Semana 1: A Perícia em Ação (Parte 2)</h2>
+            <p>Mais exemplos que mostram o poder da evidência digital em diferentes contextos.</p>
+            <div class="two-column">
+                <div class="column content-box">
+                    <img src="https://ca-times.brightspotcdn.com/dims4/default/6d69305/2147483647/strip/true/crop/3000x2428+0+0/resize/1200x971!/format/webp/quality/75/?url=https%3A%2F%2Fcalifornia-times-brightspot.s3.amazonaws.com%2Fed%2F5c%2F2e4fe407430e964f1b150ff908cf%2Fconvicted-killer-dies-00595.jpg" alt="Joseph E. Duncan III" class="case-image">
+                    <h4>Joseph E. Duncan III</h4>
+                    <p style="font-size: 1em;">Uma <span class="highlight">planilha recuperada</span> do computador do serial killer continha o planejamento detalhado de seus crimes. A perícia transformou o arquivo em uma prova irrefutável de <span class="highlight">premeditação</span>, sendo crucial para sua condenação à pena de morte.</p>
+                    <a href="https://www.fbi.gov/history/famous-cases/joseph-duncan-iii" target="_blank" class="case-link">Saiba Mais <i class="fas fa-external-link-alt"></i></a>
+                </div>
+                <div class="column content-box">
+                    <img src="https://i.guim.co.uk/img/static/sys-images/Guardian/Pix/pictures/2011/11/7/1320698281108/Dr-Conrad-Murray-trial-007.jpg?width=620&dpr=1&s=none" alt="Conrad Murray" class="case-image">
+                    <h4>Dr. Conrad Murray</h4>
+                    <p style="font-size: 1em;">O médico de Michael Jackson foi condenado com base em evidências digitais em seu computador. Um <span class="highlight">documento de Word</span> continha registros médicos que mostravam o uso de quantidades letais do anestésico Propofol fora do ambiente hospitalar.</p>
+                    <a href="https://g1.globo.com/pop-arte/noticia/2011/11/conrad-murray-e-declarado-culpado-por-morte-de-michael-jackson.html" target="_blank" class="case-link">Saiba Mais <i class="fas fa-external-link-alt"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-slide-id="7">
+            <h2>Semana 1: Para Saber Mais</h2>
+            <div class="content-box">
+                <h3 class="resources-title"><i class="fas fa-satellite-dish"></i> Expanda seu Conhecimento</h3>
+                <div class="two-column">
+                    <div class="column">
+                        <ul>
+                            <li><i class="fas fa-book"></i> <strong>Livro:</strong> "Mindhunter: O Primeiro Caçador de Serial Killers Americano" de John E. Douglas e Mark Olshaker.</li>
+                            <li><i class="fas fa-tv"></i> <strong>Série:</strong> "CSI: Investigação Criminal". Embora dramatizada, popularizou muitos conceitos da ciência forense.</li>
+                        </ul>
+                    </div>
+                    <div class="column">
+                        <ul>
+                            <li><i class="fas fa-globe"></i> <strong>Site:</strong> <a href="https://www.interpol.int/Crimes/Cybercrime" target="_blank">INTERPOL Cybercrime</a>. Veja como a cooperação internacional combate crimes digitais.</li>
+                             <li><i class="fas fa-laptop-code"></i> <strong>Pesquisar:</strong> "Digital Forensics Case Studies" para encontrar mais exemplos reais e técnicos.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide" data-slide-id="8">
+            <h1><i class="fas fa-forward"></i> Fim da Semana 1</h1>
+			<h2 style="margin-top: 40px;">Preparem-se para a Semana 2, onde mergulharemos no universo das <span class="highlight">leis</span> e da <span class="highlight">ética</span> que governam nossa profissão.</h2>
+        </div>
+        
+        <!-- --- SEMANA 2 --- -->
+        <div class="slide" data-slide-id="9">
+            <h2>Semana 2: A Base Legal da Perícia Digital no Brasil</h2>
+            <p>Toda evidência técnica só tem valor se for legalmente válida. Conhecer estas leis não é opção, é obrigação.</p>
+            <div class="two-column">
+                <div class="column content-box">
+                    <h4><i class="fas fa-file-contract"></i> Leis Fundamentais</h4>
+                    <ul>
+                        <li><a href="http://www.planalto.gov.br/ccivil_03/_ato2011-2014/2014/lei/l12965.htm" target="_blank"><strong>Marco Civil da Internet:</strong></a> A "Constituição da Internet", regula a guarda de logs de conexão e acesso.</li>
+                        <li><a href="http://www.planalto.gov.br/ccivil_03/_ato2011-2014/2012/lei/l12737.htm" target="_blank"><strong>Lei Carolina Dieckmann:</strong></a> Tipifica crimes como invasão de dispositivo informático.</li>
+                        <li><a href="http://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm" target="_blank"><strong>LGPD:</strong></a> Impõe regras rígidas sobre o tratamento de dados pessoais durante as investigações.</li>
+                    </ul>
+                </div>
+                <div class="column content-box">
+                    <h4><i class="fas fa-book"></i> Códigos Processuais</h4>
+                    <ul>
+                        <li><a href="http://www.planalto.gov.br/ccivil_03/decreto-lei/del3689.htm" target="_blank"><strong>Código de Processo Penal:</strong></a> Essencial. Exige a perícia quando a infração deixa vestígios (Art. 158) e define a <span class="highlight">Cadeia de Custódia</span>.</li>
+                        <li><a href="http://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm" target="_blank"><strong>Código de Processo Civil:</strong></a> Regulamenta a prova pericial em processos cíveis e a nomeação do perito judicial.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-slide-id="10">
+            <h2>Semana 2: A Fronteira da Lei - Redes Sociais</h2>
+            <h3><i class="fas fa-landmark"></i> A Regulação das Plataformas e o STF</h3>
+            <p>O debate sobre a regulação das redes sociais (PL 2630, "PL das Fake News") e as decisões do STF sobre moderação de conteúdo e responsabilidade das plataformas estão mudando o cenário legal no Brasil.</p>
+            <div class="two-column">
+                <div class="column content-box">
+                    <h4><i class="fas fa-balance-scale"></i> Principais Pontos em Discussão</h4>
+                    <ul>
+                        <li><strong>Dever de Cuidado:</strong> As plataformas (Meta, Google, X) teriam a obrigação legal de identificar, moderar e remover conteúdos ilícitos.</li>
+                        <li><strong>Transparência:</strong> Obrigatoriedade de relatórios sobre como os algoritmos funcionam e como a moderação é feita.</li>
+                        <li><strong>Responsabilidade Civil:</strong> As plataformas poderiam ser responsabilizadas por danos causados por conteúdos de terceiros que elas não moderaram adequadamente.</li>
+                    </ul>
+                </div>
+                <div class="column content-box">
+                    <h4><i class="fas fa-microscope"></i> Implicações para a Perícia Forense</h4>
+                    <p class="highlight">Esta regulação, se aprovada, será uma revolução para a perícia digital:</p>
+                    <ul>
+                        <li><strong>Novas Fontes de Evidência:</strong> Acesso a relatórios de transparência e dados de moderação, antes "caixas-pretas".</li>
+                        <li><strong>Rastreabilidade Aprimorada:</strong> Facilita a identificação de usuários anônimos em investigações.</li>
+                        <li><strong>O Ônus da Prova:</strong> A perícia pode precisar provar que a <span class="highlight">plataforma falhou</span> em seu dever de cuidado.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide" data-slide-id="11">
+            <h2>Semana 2: O Perito em Ação</h2>
+            <h3><i class="fas fa-user-tie"></i> Perito Oficial vs. Assistente Técnico</h3>
+            <p>Ambos analisam as evidências, mas seus papéis e compromissos são distintos.</p>
+             <div class="two-column">
+                <div class="column content-box">
+                    <img src="https://conpej.org.br/wp-content/uploads/2021/01/pj-n.jpg" alt="Perito Judicial" class="case-image">
+                    <h4><i class="fas fa-balance-scale-left"></i> Perito Oficial/Judicial</h4>
+                    <p style="font-size: 1em;">Nomeado pelo Estado (Polícia) ou pelo Juiz. Seu compromisso é com a verdade e a justiça. Ele é <span class="highlight">imparcial</span> e responde aos quesitos (perguntas formais) do juízo e das partes. Seu trabalho gera o <strong>Laudo Pericial</strong>.</p>
+                </div>
+                <div class="column content-box">
+                     <img src="https://peritodeinformatica.net.br/images/pericia-forense-computacional.jpg" alt="Assistente Técnico analisando evidências" class="case-image">
+                     <h4><i class="fas fa-balance-scale-right"></i> Assistente Técnico</h4>
+                     <p style="font-size: 1em;">Contratado por uma das partes (acusação ou defesa). Atua para garantir que a perícia oficial seja correta e para interpretar os dados sob a ótica de seu cliente, sempre com <span class="highlight">ética</span>. Seu trabalho gera o <strong>Parecer Técnico</strong>.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide" data-slide-id="12">
+            <h2>Semana 2: Para Saber Mais</h2>
+            <div class="content-box">
+                <h3 class="resources-title"><i class="fas fa-satellite-dish"></i> Aprofunde seu Conhecimento Legal e Ético</h3>
+                <div class="two-column">
+                    <div class="column">
+                        <ul>
+                            <li><i class="fas fa-book"></i> <strong>Livro:</strong> "Tratado de Computação Forense" de Pedro Eleutério. Uma obra de referência técnica e processual no Brasil.</li>
+                            <li><i class="fas fa-tv"></i> <strong>Filme:</strong> "O Dilema das Redes" (The Social Dilemma, 2020 - Netflix). Essencial para entender o "dever de cuidado" das plataformas e as implicações éticas dos algoritmos.</li>
+                        </ul>
+                    </div>
+                    <div class="column">
+                        <ul>
+                            <li><i class="fas fa-globe"></i> <strong>Site:</strong> <a href="https://www.conjur.com.br/seccoes/tecnologia-juridica" target="_blank">ConJur - Tecnologia Jurídica</a>. Acompanhe as últimas discussões e decisões judiciais sobre direito digital no Brasil.</li>
+                             <li><i class="fas fa-laptop-code"></i> <strong>Pesquisar:</strong> "Standard Operating Procedure (SOP) for Digital Forensics" e "Princípio de Locard na Forense Digital".</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-slide-id="13">
+            <h1><i class="fas fa-forward"></i> Fim da Semana 2</h1>
+            <p>Dominamos a base teórica e legal. Agora estamos prontos para colocar a mão na massa!</p>
+            <h2 style="margin-top: 40px;">Na próxima semana: A prática começa! Vamos mergulhar na <span class="highlight">Cadeia de Custódia</span> e na <span class="highlight">Coleta de Evidências</span>.</h2>
+        </div>
+
+        <!-- --- SEMANA 3 --- -->
+        <div class="slide" data-slide-id="14">
+            <h2>Semana 3: O Mapa da Investigação</h2>
+            <h3><i class="fas fa-project-diagram"></i> As 4 Fases do Processo Forense Digital</h3>
+            <p>Toda perícia segue um método rigoroso para garantir que a evidência seja admissível, confiável e defensável em tribunal.</p>
+            <div class="two-column">
+                <div class="column content-box">
+                    <h4><span class="highlight">1. Identificação</span></h4>
+                    <p style="font-size: 1em;">Reconhecer e delimitar as fontes de dados: PCs, celulares, servidores, nuvem, IoT. Priorizar dados voláteis (como memória RAM) é crucial.</p>
+                    <h4><span class="highlight">2. Coleta/Aquisição</span></h4>
+                    <p style="font-size: 1em;">Extração segura dos dados, criando uma cópia bit-a-bit (imagem forense) e usando bloqueadores de escrita para não alterar o original.</p>
+                </div>
+                <div class="column content-box">
+                    <h4><span class="highlight">3. Análise/Exame</span></h4>
+                    <p style="font-size: 1em;">Busca por evidências (arquivos, logs, e-mails, etc.), recuperação de dados deletados e reconstrução da linha do tempo dos eventos.</p>
+                    <h4><span class="highlight">4. Apresentação</span></h4>
+                    <p style="font-size: 1em;">Formalização de todas as descobertas em um Laudo Pericial claro, objetivo e tecnicamente fundamentado.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-slide-id="15">
+            <h2>Semana 3: A Corrente Inquebrável</h2>
+            <h3><i class="fas fa-link"></i> O que é a Cadeia de Custódia?</h3>
+            <p>É o histórico documentado que prova quem manuseou a evidência, quando, onde e por quê, desde sua coleta até o tribunal. Se essa corrente se quebra, a prova pode ser invalidada.</p>
+            <pre><code>Art. 158-A do CPP: "Considera-se cadeia de custódia o conjunto de todos os procedimentos utilizados para manter e documentar a história cronológica do vestígio..."</code></pre>
+            <div class="content-box">
+                <h4><i class="fas fa-fingerprint"></i> O Papel do Hashing na Cadeia de Custódia</h4>
+                <p style="font-size: 1em;">O hash é a "impressão digital" da evidência. Calculamos no momento da coleta e comparamos a cada etapa. Se o hash mudar, a <span class="highlight">integridade da prova foi comprometida</span>. É a nossa garantia matemática de que nada foi alterado.</p>
+            </div>
+        </div>
+
+        <div class="slide" data-slide-id="16">
+            <h2>Semana 3: A Bússola do Perito</h2>
+            <h3><i class="fas fa-compass"></i> Norma ABNT NBR ISO/IEC 27037:2013</h3>
+            <p>Enquanto o CPP nos dá o "o quê", a norma ISO 27037 nos dá o "como". Ela é o nosso guia de boas práticas reconhecido internacionalmente.</p>
+            <img src="https://i.imgur.com/8Qp4Z0c.png" alt="Ciclo de Vida da Evidência Digital" class="slide-image" style="max-width: 700px; background: none; border: none;">
+            <div class="content-box" style="text-align: left;">
+                <h4>O que a norma estabelece?</h4>
+                <p style="font-size: 1em; margin-bottom: 0;">Diretrizes detalhadas para as fases de <span class="highlight">Identificação</span>, <span class="highlight">Coleta</span>, <span class="highlight">Aquisição</span> e <span class="highlight">Preservação</span> de evidências digitais. Seguir essa norma fortalece a validade do trabalho pericial e o torna defensável contra questionamentos técnicos.</p>
+            </div>
+        </div>
+
+        <div class="slide" data-slide-id="17">
+            <h2>Semana 3: Legalidade e Dilemas Éticos</h2>
+            <h3>Onde a técnica encontra a consciência.</h3>
+            <div class="two-column">
+                <div class="column content-box">
+                    <h4><i class="fas fa-gavel"></i> Mandado de Busca e Apreensão</h4>
+                    <p style="font-size: 1em;">É a "chave de entrada" legal. Sem um mandado judicial, a coleta de provas em locais privados é <span class="highlight">ilícita</span> e será descartada pelo juiz. O perito deve sempre atuar dentro dos limites do que foi autorizado.</p>
+                </div>
+                <div class="column content-box">
+                    <h4><i class="fas fa-question-circle"></i> Dilema: E se eu achar algo a mais?</h4>
+                    <p style="font-size: 1em;">Você está periciando uma fraude e encontra material de pornografia infantil. O que fazer? Ignorar está fora de questão. O dever ético e legal do perito é <span class="highlight">documentar o achado e comunicar formalmente às autoridades</span> através dos canais corretos (delegado, juiz), para que uma nova investigação seja aberta. Ferramentas como o NuDetective da PF auxiliam nessa tarefa.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" data-slide-id="18">
+            <h2>Semana 3: Para Saber Mais</h2>
+            <div class="content-box">
+                <h3 class="resources-title"><i class="fas fa-satellite-dish"></i> Aprofunde seu Conhecimento sobre o Processo</h3>
+                <div class="two-column">
+                    <div class="column">
+                        <ul>
+                            <li><i class="fas fa-book"></i> <strong>Leitura:</strong> Os artigos 158-A a 158-F do Código de Processo Penal. É essencial conhecer a letra da lei.</li>
+                            <li><i class="fas fa-tv"></i> <strong>Série:</strong> "For Life" (Netflix). Mostra a importância do processo legal e como falhas podem levar a condenações injustas.</li>
+                        </ul>
+                    </div>
+                    <div class="column">
+                        <ul>
+                            <li><i class="fas fa-globe"></i> <strong>Site:</strong> <a href="https://www.iso.org/standard/44385.html" target="_blank">Página da ISO 27037</a>. Veja o resumo e o escopo da norma.</li>
+                             <li><i class="fas fa-laptop-code"></i> <strong>Pesquisar:</strong> "Admissibilidade da Prova Digital no STJ" para entender como os tribunais superiores tratam a quebra da cadeia de custódia.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide" data-slide-id="19">
+            <h1><i class="fas fa-forward"></i> Fim da Semana 3</h1>
+            <p>Com o processo bem definido, agora podemos focar nas ferramentas e técnicas de coleta.</p>
+            <h2 style="margin-top: 40px;">Na próxima semana: Vamos aprender a criar uma <span class="highlight">Imagem Forense</span> e usar o <span class="highlight">Hashing</span> na prática!</h2>
+        </div>
+
+        <!-- ####################################################### -->
+        <!-- ## SLIDES DE APROFUNDAMENTO ESTÃO AQUI ## -->
+        <!-- ####################################################### -->
+        <div class="slide" data-slide-id="99">
+            <h2><i class="fas fa-dna"></i> Aprofundando: Ciência Forense</h2>
+            <p>O campo multidisciplinar que aplica o método científico para auxiliar a Justiça.</p>
+            <div class="two-column">
+                <div class="column content-box" style="text-align: left;">
+                    <h4><i class="fas fa-flask"></i> Aplicação Científica</h4>
+                    <p style="font-size: 1em;">Baseia-se no rigor científico para estudar e interpretar vestígios, esclarecendo atos delituosos.</p>
+                </div>
+                <div class="column content-box" style="text-align: left;">
+                    <h4><i class="fas fa-file-signature"></i> Materialização da Prova</h4>
+                    <p style="font-size: 1em;">Sua função é transformar vestígios em provas formais (corpo de delito) para instruir processos legais.</p>
+                </div>
+            </div>
+            <div class="two-column" style="margin-top: 20px;">
+                <div class="column content-box" style="text-align: left;">
+                    <h4><i class="fas fa-project-diagram"></i> Interdisciplinaridade</h4>
+                    <p style="font-size: 1em;">Engloba biologia, genética, engenharia, psicologia e dezenas de outras áreas para uma análise completa.</p>
+                </div>
+                 <div class="column content-box" style="text-align: left;">
+                    <h4><i class="fas fa-laptop-code"></i> Ramo Digital</h4>
+                    <p style="font-size: 1em;">A Computação Forense é a especialidade que lida com a crescente montanha de evidências digitais do mundo moderno.</p>
+                </div>
+            </div>
+            <a href="#" class="nav-btn" data-goto-slide="2" style="margin-top: 30px;"><i class="fas fa-arrow-left"></i> Voltar à Semana 1</a>
+        </div>
+
+        <div class="slide" data-slide-id="100">
+            <h2><i class="fas fa-laptop-code"></i> Aprofundando: Computação Forense</h2>
+            <p>O ramo das Ciências Forenses focado em desvendar a verdade nos vestígios digitais.</p>
+            <div class="three-column">
+                <div class="column content-box" style="text-align: left;">
+                    <h4><i class="fas fa-search"></i> Definição e Propósito</h4>
+                    <ul>
+                        <li><strong>Objetivo:</strong> Estudar e interpretar vestígios cibernéticos para materializar a prova em um processo legal.</li>
+                        <li><strong>Importância:</strong> Essencial no combate ao cibercrime (hacking, fraudes) e em processos civis (eDiscovery).</li>
+                        <li><strong>Relação:</strong> É um subcampo da Ciência Forense e um pilar da área de Resposta a Incidentes (DFIR).</li>
+                    </ul>
+                </div>
+                <div class="column content-box" style="text-align: left;">
+                    <h4><i class="fas fa-cogs"></i> O Processo Forense</h4>
+                    <ol>
+                        <li><strong>Identificação:</strong> Onde está a evidência?</li>
+                        <li><strong>Coleta:</strong> Aquisição segura (imagem forense).</li>
+                        <li><strong>Preservação:</strong> Garantia de integridade (hashing, cadeia de custódia).</li>
+                        <li><strong>Análise:</strong> Exame técnico dos dados.</li>
+                        <li><strong>Apresentação:</strong> Elaboração do laudo pericial.</li>
+                    </ol>
+                </div>
+                <div class="column content-box" style="text-align: left;">
+                    <h4><i class="fas fa-hdd"></i> Evidências e Ferramentas</h4>
+                    <ul>
+                        <li><strong>Dispositivos:</strong> PCs, celulares, servidores, nuvem, IoT, carros.</li>
+                        <li><strong>Evidências:</strong> E-mails, fotos, logs, tráfego de rede, dados deletados.</li>
+                        <li><strong>Ferramentas:</strong> Autopsy, FTK, EnCase, Volatility, Wireshark, Cellebrite.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="content-box" style="margin-top:20px; text-align: left;">
+                <h4><i class="fas fa-exclamation-triangle"></i> Desafios Atuais e Futuros</h4>
+                <p style="font-size: 1em;">A área enfrenta desafios constantes: a <span class="highlight">volatilidade</span> dos dados (RAM), o avanço da <span class="highlight">criptografia</span>, a complexidade da <span class="highlight">nuvem e IoT</span>, técnicas <span class="highlight">antiforenses</span> e o volume massivo de dados (Big Data), além da validação de conteúdo gerado por <span class="highlight">Inteligência Artificial (deepfakes)</span>.</p>
+            </div>
+            <a href="#" class="nav-btn" data-goto-slide="2" style="margin-top: 20px;"><i class="fas fa-arrow-left"></i> Voltar à Semana 1</a>
+        </div>
+
+        <div class="slide" data-slide-id="101">
+            <h2><i class="fas fa-history"></i> Histórico e Evolução da Computação Forense</h2>
+            <p>De uma disciplina reativa e desordenada a um pilar essencial da cibersegurança e da justiça moderna.</p>
+            <div class="three-column">
+                <div class="column content-box" style="text-align: left;">
+                    <img src="https://images.pexels.com/photos/7988086/pexels-photo-7988086.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Computador antigo" class="case-image">
+                    <h4><i class="fas fa-past"></i> Os Primórdios (1980-2000)</h4>
+                    <ul>
+                        <li>Evolução <span class="highlight">"desordenada"</span>, impulsionada pelos primeiros crimes computacionais.</li>
+                        <li>Análise inicial feita em sistemas "vivos", com alto risco de alteração de evidências.</li>
+                        <li>Migração para análise estática (cópias/imagens) como boa prática.</li>
+                    </ul>
+                </div>
+                <div class="column content-box" style="text-align: left;">
+                    <img src="https://images.pexels.com/photos/3861958/pexels-photo-3861958.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Equipe de TI moderna" class="case-image">
+                    <h4><i class="fas fa-present"></i> A Consolidação (2000-Hoje)</h4>
+                    <ul>
+                        <li>Surgimento de políticas e <span class="highlight">padronizações</span> para a área.</li>
+                        <li>Expansão para todos os dispositivos: nuvem, IoT, celulares, veículos.</li>
+                        <li>Integração com Cibersegurança, criando a disciplina de <span class="highlight">DFIR</span> (Digital Forensics and Incident Response).</li>
+                    </ul>
+                </div>
+                <div class="column content-box" style="text-align: left;">
+                    <img src="https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Inteligência Artificial" class="case-image">
+                    <h4><i class="fas fa-future"></i> O Futuro e os Desafios</h4>
+                    <ul>
+                        <li>Lidar com <span class="highlight">criptografia</span> avançada e grande volume de dados (Big Data).</li>
+                        <li>Combater técnicas <span class="highlight">antiforenses</span> que visam destruir ou ocultar evidências.</li>
+                        <li>Uso crescente de <span class="highlight">IA e Machine Learning</span> para automatizar e acelerar a análise.</li>
+                    </ul>
+                </div>
+            </div>
+            <a href="#" class="nav-btn" data-goto-slide="3" style="margin-top: 20px;"><i class="fas fa-arrow-left"></i> Voltar à Semana 1</a>
+        </div>
+        
+        <div class="slide" data-slide-id="102">
+            <h2><i class="fas fa-user-secret"></i> O Detetive Moderno: O Perito Forense Digital</h2>
+            <p>Sua função é identificar, preservar, analisar e apresentar dados digitais com valor probatório.</p>
+            <div class="two-column">
+                <div class="column content-box" style="text-align: left;">
+                    <img src="https://images.pexels.com/photos/5474028/pexels-photo-5474028.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Perito analisando dados" class="detail-image">
+                    <h4><i class="fas fa-cogs"></i> O Processo de Atuação</h4>
+                    <ol>
+                        <li><strong>Identificação:</strong> Reconhecer fontes de dados (PCs, nuvem, IoT).</li>
+                        <li><strong>Coleta:</strong> Extração segura dos dados, geralmente com espelhamento (imagem forense).</li>
+                        <li><strong>Análise:</strong> Exame técnico em busca de padrões, reconstrução de eventos e recuperação de dados deletados.</li>
+                        <li><strong>Preservação:</strong> Manter a integridade da evidência através da rigorosa cadeia de custódia.</li>
+                    </ol>
+                </div>
+                <div class="column content-box" style="text-align: left;">
+                    <img src="https://academiatech.s3.amazonaws.com/wp-content/uploads/2023/08/perita-24082023-64e89b3fc6d86-1024x576.webp" alt="Perito analisando componentes de um computador" class="detail-image">
+                    <h4><i class="fas fa-brain"></i> Habilidades Essenciais</h4>
+                    <ul>
+                        <li><strong>Conhecimento Técnico:</strong> Domínio de SO, redes, nuvem e sistemas de arquivos.</li>
+                        <li><strong>Conhecimento Legal:</strong> Entender o impacto jurídico e as leis (CPP, LGPD, Marco Civil).</li>
+                        <li><strong>Ética e Imparcialidade:</strong> Atuar com rigor, proteger a privacidade e possuir fé pública (no caso do perito oficial).</li>
+                        <li><strong>Capacidade Analítica:</strong> Pensamento crítico para conectar os pontos e encontrar a "agulha no palheiro" digital.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="content-box" style="margin-top:20px; text-align: left;">
+                <h4><i class="fas fa-tools"></i> Ferramentas e Desafios</h4>
+                <p style="font-size: 1em;">O perito utiliza um arsenal de hardware (write-blockers) e software (Autopsy, IPED, FTK, Cellebrite, Volatility) para investigar desde HDs e celulares até sistemas em nuvem e drones. Os maiores desafios são a <span class="highlight">criptografia</span>, o <span class="highlight">volume de dados</span>, a <span class="highlight">complexidade da IoT</span> e o combate a <span class="highlight">deepfakes</span> gerados por IA.</p>
+            </div>
+            <a href="#" class="nav-btn" data-goto-slide="4" style="margin-top: 20px;"><i class="fas fa-arrow-left"></i> Voltar</a>
+        </div>
+
+        <!-- Slide Final -->
+        <div class="slide">
+            <h1>Obrigado!</h1>
+            <p>A jornada está só começando. A curiosidade e o aprendizado contínuo são suas maiores ferramentas.</p>
+        </div>
+
+        <!-- Controles de Navegação -->
+        <div id="navigation">
+            <button class="nav-btn" id="prev-btn"><i class="fas fa-arrow-left"></i></button>
+            <span id="slide-counter"></span>
+            <button class="nav-btn" id="next-btn"><i class="fas fa-arrow-right"></i></button>
+        </div>
+        
+        <button id="fullscreen-btn"><i class="fas fa-expand"></i></button>
+    </div>
+
+    <script>
+        // Javascript ATUALIZADO para lidar com os novos links
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const slideCounter = document.getElementById('slide-counter');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const presentationContainer = document.getElementById('presentation-container');
+
+        let currentSlideIndex = 0;
+        const mainFlowSlides = Array.from(slides).filter(s => parseInt(s.dataset.slideId, 10) < 99);
+        const totalMainSlides = mainFlowSlides.length;
+
+        function findSlideIndexById(id) {
+            return Array.from(slides).findIndex(s => s.dataset.slideId === id);
+        }
+
+        function showSlide(index) {
+            if (index < 0 || index >= slides.length) return;
+            
+            slides.forEach((slide) => {
+                slide.classList.remove('active-slide');
+            });
+            
+            currentSlideIndex = index;
+            slides[currentSlideIndex].classList.add('active-slide');
+            
+            const currentSlideId = parseInt(slides[currentSlideIndex].dataset.slideId, 10);
+            if (currentSlideId < 99) {
+                const mainFlowIndex = mainFlowSlides.findIndex(s => s === slides[currentSlideIndex]);
+                slideCounter.textContent = `${mainFlowIndex + 1} / ${totalMainSlides}`;
+            } else {
+                 slideCounter.textContent = 'Detalhe';
+            }
+        }
+        
+        function nextSlide() {
+            const currentSlideId = parseInt(slides[currentSlideIndex].dataset.slideId, 10);
+            if (currentSlideId >= 99) return;
+            
+            const mainFlowIndex = mainFlowSlides.findIndex(s => s === slides[currentSlideIndex]);
+            if (mainFlowIndex < totalMainSlides - 1) {
+                const nextMainSlide = mainFlowSlides[mainFlowIndex + 1];
+                const globalIndex = Array.from(slides).findIndex(s => s === nextMainSlide);
+                showSlide(globalIndex);
+            }
+        }
+
+        function prevSlide() {
+            const currentSlideId = parseInt(slides[currentSlideIndex].dataset.slideId, 10);
+            if (currentSlideId >= 99) return;
+
+            const mainFlowIndex = mainFlowSlides.findIndex(s => s === slides[currentSlideIndex]);
+             if (mainFlowIndex > 0) {
+                const prevMainSlide = mainFlowSlides[mainFlowIndex - 1];
+                const globalIndex = Array.from(slides).findIndex(s => s === prevMainSlide);
+                showSlide(globalIndex);
+            }
+        }
+        
+        nextBtn.addEventListener('click', nextSlide);
+        prevBtn.addEventListener('click', prevSlide);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') return;
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        presentationContainer.addEventListener('click', (e) => {
+            const link = e.target.closest('[data-goto-slide], [data-target-slide]');
+            if (!link) return;
+
+            e.preventDefault();
+            const targetId = link.dataset.gotoSlide || link.dataset.targetSlide;
+            const targetIndex = findSlideIndexById(targetId);
+
+            if (targetIndex !== -1) {
+                showSlide(targetIndex);
+            }
+        });
+        
+        fullscreenBtn.addEventListener('click', () => {
+            const elem = document.documentElement;
+            if (!document.fullscreenElement) {
+                if (elem.requestFullscreen) elem.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        });
+
+        showSlide(currentSlideIndex);
+    </script>
+</body>
+</html>
